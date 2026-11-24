@@ -64,6 +64,8 @@ const elements = {
   converterAmount: document.getElementById("converterAmount"),
   converterUnit: document.getElementById("converterUnit"),
   converterResult: document.getElementById("converterResult"),
+  apiEndpointCode: document.getElementById("apiEndpointCode"),
+  copyEndpointBtn: document.getElementById("copyEndpointBtn"),
 };
 
 /* ---------- Yardımcı Fonksiyonlar ---------- */
@@ -698,6 +700,20 @@ document.addEventListener("keydown", (event) => {
 });
 
 elements.converterAmount.addEventListener("input", updateConverterResult);
+
+if (elements.copyEndpointBtn && elements.apiEndpointCode) {
+  elements.copyEndpointBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(elements.apiEndpointCode.textContent.trim());
+      elements.copyEndpointBtn.textContent = "Kopyalandı ✓";
+      setTimeout(() => {
+        elements.copyEndpointBtn.textContent = "Kopyala";
+      }, 1800);
+    } catch {
+      elements.copyEndpointBtn.textContent = "Seçip Kopyala";
+    }
+  });
+}
 
 // İlk açılışta verileri çek ve otomatik canlı zamanlayıcıyı başlat
 updateAutoRefreshUI();

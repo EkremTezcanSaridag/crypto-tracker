@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Crypto Tracker — Canlı Kripto Para Takip Paneli</title>
-  <meta name="description" content="CoinGecko Public API v3 kullanılarak saf HTML, CSS ve JavaScript ile geliştirilmiş canlı kripto para takip web uygulaması." />
+  <title>Crypto Tracker — Ekrem Tezcan Sarıdağ</title>
+  <meta name="description" content="Ekrem Tezcan Sarıdağ tarafından CoinGecko Public API v3 ile geliştirilmiş canlı kripto para takip web uygulaması." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=3" />
 </head>
 <body>
   <div class="app-shell">
@@ -17,7 +17,10 @@
       <div class="brand">
         <div class="brand-icon" aria-hidden="true">₿</div>
         <div>
-          <h1>Crypto Tracker</h1>
+          <div class="brand-title-row">
+            <h1>Crypto Tracker</h1>
+            <span class="author-badge">Ekrem Tezcan Sarıdağ</span>
+          </div>
           <p class="subtitle">CoinGecko Ücretsiz API ile Canlı Kripto Para Takip Paneli</p>
         </div>
       </div>
@@ -51,16 +54,18 @@
 
     <!-- Kısa Proje Tanıtım Şeridi -->
     <section class="intro-banner" aria-label="Uygulama tanıtımı">
-      <div class="intro-text">
-        <span class="intro-tag">REST API Web Projesi</span>
-        <p>
-          <strong>Crypto Tracker</strong>, ücretsiz ve API anahtarı gerektirmeyen
-          <strong>CoinGecko Public API v3</strong> üzerinden piyasa değerine göre ilk 25 kripto paranın
-          güncel fiyatlarını, <strong>1 saatlik / 24 saatlik değişimlerini</strong> ve 7 günlük trend
-          grafiklerini canlı olarak takip etmenizi sağlayan bir web uygulamasıdır.
+      <div class="intro-left">
+        <div class="intro-badges">
+          <span class="intro-tag">REST API Projesi</span>
+          <span class="intro-tag intro-tag-green">Ücretsiz &amp; Anahtarsız API</span>
+        </div>
+        <p class="intro-desc">
+          <strong>Crypto Tracker</strong>, <strong>CoinGecko Public API v3</strong> üzerinden en büyük 25 kripto
+          paranın canlı fiyatlarını, <strong>1s / 24s değişimlerini</strong> ve 7 günlük grafiklerini
+          anlık takip eden web uygulamasıdır.
         </p>
       </div>
-      <a href="#proje-hakkinda" class="intro-more-link">Nasıl çalışır? →</a>
+      <a href="#proje-hakkinda" class="intro-more-link">Nasıl Çalışır? →</a>
     </section>
 
     <!-- Durum / Uyarı Bandı -->
@@ -154,117 +159,142 @@
 
     <!-- Proje Hakkında ve Çalışma Mantığı Bölümü -->
     <section id="proje-hakkinda" class="about-section" aria-labelledby="aboutHeading">
-      <div class="about-header">
-        <span class="about-eyebrow">Proje Dokümantasyonu</span>
-        <h2 id="aboutHeading">Bu Site Ne Yapar ve Nasıl Çalışır?</h2>
-        <p class="about-lead">
-          Bu proje, web uygulamalarının dış bir <strong>REST API</strong> servisinden canlı veri çekip
-          kullanıcı arayüzünde nasıl işlediğini göstermek amacıyla saf <strong>HTML, CSS ve JavaScript</strong>
-          kullanılarak geliştirilmiştir.
-        </p>
+      <div class="about-top">
+        <div class="about-header">
+          <span class="about-eyebrow">Proje Hakkında</span>
+          <h2 id="aboutHeading">Bu Site Ne Yapar &amp; API Nasıl Çalışır?</h2>
+          <p class="about-lead">
+            Dış bir <strong>REST API</strong> servisinden canlı piyasa verisi çekip işleyen, kurulum
+            gerektirmeyen modern bir web uygulaması.
+          </p>
+        </div>
+
+        <!-- Geliştirici Kartı -->
+        <div class="dev-card">
+          <div class="dev-avatar" aria-hidden="true">ETS</div>
+          <div class="dev-meta">
+            <span class="dev-role">Geliştirici</span>
+            <strong class="dev-name">Ekrem Tezcan Sarıdağ</strong>
+            <a
+              class="dev-github"
+              href="https://github.com/EkremTezcanSaridag/crypto-tracker"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              github.com/EkremTezcanSaridag ↗
+            </a>
+          </div>
+        </div>
       </div>
 
-      <!-- 3 Adımda API Akışı -->
-      <div class="steps-grid">
-        <article class="step-card">
-          <span class="step-num">01</span>
-          <h3>Canlı API İsteği (HTTP GET)</h3>
+      <!-- 3 Adımda Görsel API Akışı -->
+      <div class="flow-grid">
+        <article class="flow-card">
+          <div class="flow-head">
+            <span class="flow-icon flow-icon-blue" aria-hidden="true">🌐</span>
+            <span class="flow-step">Adım 01</span>
+          </div>
+          <h3>API İsteği (HTTP GET)</h3>
           <p>
-            Sayfa açıldığında ve her 60 saniyede bir JavaScript <code>fetch()</code> ve
-            <code>async/await</code> yapısı kullanılarak ücretsiz <strong>CoinGecko Public API v3</strong>
-            sunucusuna asenkron istek gönderilir.
+            Tarayıcı, <code>fetch()</code> ve <code>async/await</code> ile <strong>CoinGecko API v3</strong>
+            sunucusuna ücretsiz istek gönderir.
           </p>
         </article>
 
-        <article class="step-card">
-          <span class="step-num">02</span>
-          <h3>JSON Verisini İşleme</h3>
+        <article class="flow-card">
+          <div class="flow-head">
+            <span class="flow-icon flow-icon-emerald" aria-hidden="true">⚡</span>
+            <span class="flow-step">Adım 02</span>
+          </div>
+          <h3>Canlı JSON &amp; Değişim</h3>
           <p>
-            API'den dönen JSON dizisinden her coinin güncel fiyatı, <strong>1 saatlik</strong> ve
-            <strong>24 saatlik değişim yüzdesi</strong>, 7 günlük fiyat geçmişi, hacim ve piyasa
-            değeri okunur. Fiyat değişen satırlar yeşil veya kırmızı vurgulanır.
+            Gelen JSON verisindeki fiyat, <strong>1s / 24s yüzde</strong> ve 7 günlük geçmiş işlenir;
+            artan/düşen fiyatlar anlık renk vurgusuyla gösterilir.
           </p>
         </article>
 
-        <article class="step-card">
-          <span class="step-num">03</span>
-          <h3>Dinamik Arayüz &amp; Önbellek</h3>
+        <article class="flow-card">
+          <div class="flow-head">
+            <span class="flow-icon flow-icon-violet" aria-hidden="true">📊</span>
+            <span class="flow-step">Adım 03</span>
+          </div>
+          <h3>Dinamik Panel &amp; Önbellek</h3>
           <p>
-            Veriler harici kütüphane olmadan tabloya ve SVG grafiklere dönüştürülür. Tarayıcıdaki
-            <code>localStorage</code> ile favoriler saklanır ve 60 saniyelik önbellek sayesinde
-            ücretsiz API istek limiti (429) korunur.
+            SVG grafikler çizilir, <strong>60 saniyede bir otomatik</strong> yenilenir ve
+            <code>localStorage</code> ile favoriler ile önbellek saklanır.
           </p>
         </article>
       </div>
 
-      <!-- Özellikler & Teknik Bilgiler -->
-      <div class="about-details-grid">
-        <article class="about-box">
-          <h3>Sitede Neler Yapabilirsiniz?</h3>
-          <ul class="feature-list">
-            <li>
-              <strong>Anlık Takip:</strong> Üstteki <em>Canlı · 60sn</em> düğmesiyle otomatik
-              güncellemeyi takip edebilir veya <em>Yenile</em> butonuyla anında veri çekebilirsiniz.
-            </li>
-            <li>
-              <strong>Çoklu Para Birimi:</strong> Fiyatları tek tıkla <strong>USD ($), TRY (₺)</strong>
-              ve <strong>EUR (€)</strong> cinsinden görüntüleyebilirsiniz.
-            </li>
-            <li>
-              <strong>Arama, Sıralama ve Favoriler:</strong> Coin adına/sembolüne göre filtreleme
-              yapabilir, yıldız (★) simgesiyle kendi takip listenizi oluşturabilirsiniz.
-            </li>
-            <li>
-              <strong>Detay &amp; Hızlı Hesaplayıcı:</strong> Tablodan herhangi bir coine tıklayarak
-              24 saatlik en yüksek/düşük değerleri, ATH bilgisini görebilir ve tutar hesaplayabilirsiniz.
-            </li>
-          </ul>
-        </article>
+      <!-- Öne Çıkan 4 Özellik Kartı -->
+      <div class="highlights-grid">
+        <div class="highlight-card">
+          <span class="highlight-icon" aria-hidden="true">🔄</span>
+          <div>
+            <strong>Otomatik Canlı Takip</strong>
+            <span>60sn geri sayım &amp; yeşil/kırmızı fiyat vurgusu</span>
+          </div>
+        </div>
+        <div class="highlight-card">
+          <span class="highlight-icon" aria-hidden="true">💱</span>
+          <div>
+            <strong>USD · TRY · EUR</strong>
+            <span>Tek tıkla anlık para birimi dönüşümü</span>
+          </div>
+        </div>
+        <div class="highlight-card">
+          <span class="highlight-icon" aria-hidden="true">⭐</span>
+          <div>
+            <strong>Arama &amp; Favoriler</strong>
+            <span>Tarayıcıda kalıcı kişisel takip listesi</span>
+          </div>
+        </div>
+        <div class="highlight-card">
+          <span class="highlight-icon" aria-hidden="true">🧮</span>
+          <div>
+            <strong>Detay &amp; Hesaplayıcı</strong>
+            <span>Coine tıklayıp ATH ve canlı değer hesapla</span>
+          </div>
+        </div>
+      </div>
 
-        <article class="about-box">
-          <h3>Kullanılan Teknolojiler ve API</h3>
+      <!-- Teknik & API Bilgi Kartı -->
+      <div class="api-panel">
+        <div class="api-panel-top">
+          <div>
+            <h3>Kullanılan Ücretsiz API &amp; Teknolojiler</h3>
+            <p class="api-panel-sub">
+              <strong>CoinGecko Public API v3</strong> · Kayıt yok · API anahtarı yok · CORS destekli
+            </p>
+          </div>
           <div class="tech-tags">
             <span class="tech-tag">HTML5</span>
-            <span class="tech-tag">CSS3 (Responsive)</span>
-            <span class="tech-tag">Vanilla JavaScript (ES6+)</span>
+            <span class="tech-tag">CSS3</span>
+            <span class="tech-tag">Vanilla JS</span>
             <span class="tech-tag">Fetch API</span>
             <span class="tech-tag">Inline SVG</span>
             <span class="tech-tag">LocalStorage</span>
           </div>
+        </div>
 
-          <div class="api-info-box">
-            <div class="api-info-row">
-              <span>API Servisi:</span>
-              <strong>CoinGecko Public API v3</strong>
-            </div>
-            <div class="api-info-row">
-              <span>Ücret / Anahtar:</span>
-              <strong>Tamamen Ücretsiz · API Anahtarsız · CORS Destekli</strong>
-            </div>
-            <div class="api-info-row">
-              <span>Güncelleme Sıklığı:</span>
-              <strong>Her 60 saniyede bir otomatik + manuel yenileme</strong>
-            </div>
-            <div class="endpoint-block">
-              <span class="endpoint-method">GET</span>
-              <code>https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&amp;per_page=25&amp;sparkline=true&amp;price_change_percentage=1h,24h</code>
-            </div>
-          </div>
-        </article>
+        <div class="endpoint-block">
+          <span class="endpoint-method">GET</span>
+          <code id="apiEndpointCode">https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&amp;order=market_cap_desc&amp;per_page=25&amp;page=1&amp;sparkline=true&amp;price_change_percentage=1h,24h</code>
+          <button id="copyEndpointBtn" class="copy-btn" type="button">Kopyala</button>
+        </div>
       </div>
     </section>
 
-    <!-- Alt Bilgi (CoinGecko Atıfı) -->
+    <!-- Alt Bilgi -->
     <footer class="footer">
       <p>
-        Veriler ücretsiz
+        © 2026 <strong>Ekrem Tezcan Sarıdağ</strong> · Veriler ücretsiz
         <a href="https://www.coingecko.com/en/api" target="_blank" rel="noopener noreferrer">CoinGecko Public API v3</a>
-        tarafından sağlanmaktadır. Yatırım tavsiyesi değildir.
+        tarafından sağlanmaktadır.
       </p>
       <p>
-        Geliştirici: Ekrem Tezcan Sarıdağ ·
         <a href="https://github.com/EkremTezcanSaridag/crypto-tracker" target="_blank" rel="noopener noreferrer">
-          GitHub Reposu
+          GitHub Kaynak Kodu ↗
         </a>
       </p>
     </footer>
@@ -332,6 +362,6 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
