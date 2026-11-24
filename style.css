@@ -417,6 +417,247 @@ body {
   text-overflow: ellipsis;
 }
 
+/* ---------- Öne Çıkan İnteraktif Grafik Kartları ---------- */
+.charts-section {
+  margin-bottom: 24px;
+}
+
+.charts-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.charts-section-head h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.charts-section-sub {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.range-group {
+  display: inline-flex;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 3px;
+}
+
+.range-group-sm {
+  border-radius: 8px;
+}
+
+.range-btn,
+.modal-range-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.modal-range-btn {
+  padding: 4px 10px;
+  font-size: 0.76rem;
+}
+
+.range-btn:hover,
+.modal-range-btn:hover {
+  color: var(--text);
+}
+
+.range-btn.active,
+.modal-range-btn.active {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.chart-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.chart-card {
+  background: linear-gradient(180deg, rgba(28, 40, 65, 0.55), var(--bg-card));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.chart-card:hover {
+  border-color: rgba(96, 165, 250, 0.42);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
+}
+
+.chart-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.chart-card-coin {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.chart-card-coin img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.chart-card-name {
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chart-card-sym {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.chart-card-price-block {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.chart-card-price {
+  font-size: 1.24rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.chart-card-time {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.chart-card-time.is-hovering {
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+.chart-svg-wrap {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.interactive-chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  cursor: crosshair;
+}
+
+.chart-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-card-foot strong {
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.chart-card-detail-btn {
+  border: none;
+  background: transparent;
+  color: #60a5fa;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.chart-card-detail-btn:hover {
+  text-decoration: underline;
+}
+
+.chart-card-skeleton {
+  min-height: 224px;
+  justify-content: space-between;
+}
+
+/* Modal İnteraktif Grafik */
+.modal-chart-box {
+  background: rgba(11, 15, 25, 0.55);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 18px;
+}
+
+.modal-chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.modal-chart-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.modal-chart-meta.is-hovering {
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+.modal-chart-wrap {
+  width: 100%;
+  touch-action: none;
+}
+
 /* ---------- Arama ve Filtreleme ---------- */
 .toolbar {
   display: flex;
@@ -1118,7 +1359,9 @@ body {
 
 .modal-card {
   width: 100%;
-  max-width: 500px;
+  max-width: 540px;
+  max-height: 92vh;
+  overflow-y: auto;
   background: var(--bg-elevated);
   border: 1px solid var(--border-strong);
   border-radius: 18px;
@@ -1275,6 +1518,12 @@ body {
 }
 
 /* ---------- Duyarlı Tasarım (Responsive) ---------- */
+@media (max-width: 1050px) {
+  .chart-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 980px) {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1301,6 +1550,7 @@ body {
     padding: 18px 14px 32px;
   }
   .stats-grid,
+  .chart-cards-grid,
   .highlights-grid,
   .modal-metrics {
     grid-template-columns: 1fr;

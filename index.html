@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=4" />
 </head>
 <body>
   <div class="app-shell">
@@ -96,6 +96,27 @@
         <strong id="lastUpdated" class="stat-value">—</strong>
         <span id="dataSourceLabel" class="stat-sub">CoinGecko Public API v3</span>
       </article>
+    </section>
+
+    <!-- Öne Çıkan Etkileşimli Grafik Kartları -->
+    <section class="charts-section" aria-labelledby="chartsHeading">
+      <div class="charts-section-head">
+        <div>
+          <h2 id="chartsHeading">Öne Çıkan Grafik Kartları</h2>
+          <p class="charts-section-sub">
+            Grafik üzerinde fareyle gezerek saatlik fiyatları inceleyebilir, karta tıklayarak detay açabilirsiniz.
+          </p>
+        </div>
+
+        <div class="range-group" role="group" aria-label="Grafik zaman aralığı">
+          <button class="range-btn" data-range="24h" type="button">24 Saat</button>
+          <button class="range-btn active" data-range="7d" type="button">7 Gün</button>
+        </div>
+      </div>
+
+      <div id="chartCardsGrid" class="chart-cards-grid">
+        <!-- JavaScript ile dinamik olarak doldurulur -->
+      </div>
     </section>
 
     <!-- Arama ve Filtreleme Çubuğu -->
@@ -320,6 +341,18 @@
         <span id="modalChange1h" class="change-badge">—</span>
       </div>
 
+      <!-- Modal İnteraktif Grafik -->
+      <div class="modal-chart-box">
+        <div class="modal-chart-head">
+          <span id="modalChartMeta" class="modal-chart-meta">Son 7 Gün Saatlik Trend</span>
+          <div class="range-group range-group-sm" role="group" aria-label="Detay grafik aralığı">
+            <button class="modal-range-btn" data-range="24h" type="button">24s</button>
+            <button class="modal-range-btn active" data-range="7d" type="button">7g</button>
+          </div>
+        </div>
+        <div id="modalChartWrap" class="modal-chart-wrap"></div>
+      </div>
+
       <div class="modal-metrics">
         <div class="metric-item">
           <span>24s En Yüksek</span>
@@ -362,6 +395,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

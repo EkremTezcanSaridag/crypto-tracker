@@ -7,6 +7,17 @@ const COIN_COUNT = 25;
 const AUTO_REFRESH_SECONDS = 60; // Ücretsiz API güncelleme ve limit döngüsüyle uyumlu
 const CACHE_TTL_MS = 55 * 1000;  // 55 saniye önbellek
 const FAVORITES_STORAGE_KEY = "crypto_tracker_favorites";
+const PREFERRED_CHART_IDS = ["bitcoin", "ethereum", "solana", "binancecoin"];
+const STABLECOIN_IDS = new Set([
+  "tether",
+  "usd-coin",
+  "usds",
+  "dai",
+  "first-digital-usd",
+  "ethena-usde",
+  "true-usd",
+  "paypal-usd",
+]);
 
 // Uygulama durumu (State)
 const state = {
@@ -14,6 +25,8 @@ const state = {
   coins: [],
   previousPrices: {},   // Aynı para birimindeki bir önceki fiyatlar (anlık değişim vurgusu için)
   priceFlashMap: {},    // { [coinId]: "flash-up" | "flash-down" }
+  chartRange: "7d",     // Öne çıkan grafik kartları zaman aralığı ("24h" | "7d")
+  modalChartRange: "7d",// Modal büyük grafiği zaman aralığı ("24h" | "7d")
   searchQuery: "",
   sortBy: "rank",
   onlyFavorites: false,
@@ -29,6 +42,9 @@ const elements = {
   autoRefreshToggle: document.getElementById("autoRefreshToggle"),
   autoRefreshLabel: document.getElementById("autoRefreshLabel"),
   currencyButtons: document.querySelectorAll(".currency-btn"),
+  rangeButtons: document.querySelectorAll(".range-btn"),
+  modalRangeButtons: document.querySelectorAll(".modal-range-btn"),
+  chartCardsGrid: document.getElementById("chartCardsGrid"),
   refreshBtn: document.getElementById("refreshBtn"),
   statusBanner: document.getElementById("statusBanner"),
   totalMarketCap: document.getElementById("totalMarketCap"),
@@ -55,6 +71,8 @@ const elements = {
   modalPrice: document.getElementById("modalPrice"),
   modalChange: document.getElementById("modalChange"),
   modalChange1h: document.getElementById("modalChange1h"),
+  modalChartMeta: document.getElementById("modalChartMeta"),
+  modalChartWrap: document.getElementById("modalChartWrap"),
   modalHigh24h: document.getElementById("modalHigh24h"),
   modalLow24h: document.getElementById("modalLow24h"),
   modalMarketCap: document.getElementById("modalMarketCap"),
@@ -299,7 +317,10 @@ async function fetchCryptoData({ forceRefresh = false, currencyChanged = false, 
   state.isLoading = true;
   elements.refreshBtn.disabled = true;
   elements.refreshBtn.classList.add("loading");
-  if (state.coins.length === 0) renderSkeletonRows();
+  if (state.coins.length === 0) {
+    renderChartCardSkeletons();
+    renderSkeletonRows();
+  }
 
   const url =
     `${API_BASE_URL}?vs_currency=${encodeURIComponent(currency)}` +
@@ -343,6 +364,7 @@ async function fetchCryptoData({ forceRefresh = false, currencyChanged = false, 
     } else {
       state.coins = [];
       elements.tableBody.innerHTML = "";
+      if (elements.chartCardsGrid) elements.chartCardsGrid.innerHTML = "";
       const errText =
         error.message === "RATE_LIMIT"
           ? "CoinGecko ücretsiz istek limiti geçici olarak doldu. Lütfen 1 dakika bekleyip tekrar deneyin."
@@ -417,6 +439,7 @@ function updateUI(updatedTimestamp, sourceText) {
   elements.favCount.textContent = String(state.favorites.size);
 
   renderSummaryCards();
+  renderChartCards();
   renderTable();
 
   // Modal açıksa güncellemede içeriğini de tazele
@@ -558,6 +581,301 @@ function renderTable() {
     .join("");
 }
 
+/* ---------- İnteraktif Grafik Kartları (Saf SVG + Hover) ---------- */
+
+function formatChartDate(timestamp) {
+  return new Date(timestamp).toLocaleString("tr-TR", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getChartSeries(coin, range) {
+  const raw = coin.sparkline_in_7d?.price;
+  const allPrices = Array.isArray(raw)
+    ? raw.filter((p) => typeof p === "number" && !Number.isNaN(p))
+    : [];
+
+  if (allPrices.length < 2) {
+    return null;
+  }
+
+  const prices =
+    range === "24h" && allPrices.length > 25 ? allPrices.slice(-25) : allPrices;
+
+  const endTime = coin.last_updated ? new Date(coin.last_updated).getTime() : Date.now();
+  const safeEnd = Number.isNaN(endTime) ? Date.now() : endTime;
+  const timestamps = prices.map(
+    (_, idx) => safeEnd - (prices.length - 1 - idx) * 60 * 60 * 1000
+  );
+
+  const first = prices[0];
+  const last = prices[prices.length - 1];
+  const changePct = first > 0 ? ((last - first) / first) * 100 : 0;
+
+  return {
+    prices,
+    timestamps,
+    min: Math.min(...prices),
+    max: Math.max(...prices),
+    changePct,
+  };
+}
+
+function mountInteractiveChart({ container, series, gradId, width = 320, height = 112, onHover, onLeave }) {
+  if (!container) return;
+  if (!series || series.prices.length < 2) {
+    container.innerHTML = '<div class="range-text" style="padding: 28px 0; text-align: center;">Grafik verisi yok</div>';
+    return;
+  }
+
+  const { prices, timestamps, min, max } = series;
+  const padX = 6;
+  const padTop = 10;
+  const padBottom = 8;
+  const plotW = width - padX * 2;
+  const plotH = height - padTop - padBottom;
+  const span = max - min || 1;
+
+  const coords = prices.map((price, idx) => {
+    const x = padX + (idx / (prices.length - 1)) * plotW;
+    const y = padTop + plotH - ((price - min) / span) * plotH;
+    return { x, y, price, ts: timestamps[idx] };
+  });
+
+  const linePath = coords
+    .map((pt, i) => `${i === 0 ? "M" : "L"}${pt.x.toFixed(1)},${pt.y.toFixed(1)}`)
+    .join(" ");
+
+  const firstPt = coords[0];
+  const lastPt = coords[coords.length - 1];
+  const baseY = (padTop + plotH).toFixed(1);
+  const areaPath = `${linePath} L${lastPt.x.toFixed(1)},${baseY} L${firstPt.x.toFixed(1)},${baseY} Z`;
+
+  const isUp = lastPt.price >= firstPt.price;
+  const strokeColor = isUp ? "#22c55e" : "#ef4444";
+  const midY = (padTop + plotH / 2).toFixed(1);
+
+  container.innerHTML = `
+    <svg class="interactive-chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Fiyat trend grafiği">
+      <defs>
+        <linearGradient id="${escapeHtml(gradId)}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${strokeColor}" stop-opacity="0.34" />
+          <stop offset="100%" stop-color="${strokeColor}" stop-opacity="0.01" />
+        </linearGradient>
+      </defs>
+
+      <line x1="${padX}" y1="${padTop}" x2="${width - padX}" y2="${padTop}" stroke="rgba(148,163,184,0.12)" stroke-dasharray="3 3" />
+      <line x1="${padX}" y1="${midY}" x2="${width - padX}" y2="${midY}" stroke="rgba(148,163,184,0.12)" stroke-dasharray="3 3" />
+      <line x1="${padX}" y1="${baseY}" x2="${width - padX}" y2="${baseY}" stroke="rgba(148,163,184,0.12)" stroke-dasharray="3 3" />
+
+      <path d="${areaPath}" fill="url(#${escapeHtml(gradId)})" />
+      <path d="${linePath}" fill="none" stroke="${strokeColor}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+
+      <line class="chart-crosshair" x1="0" y1="${padTop}" x2="0" y2="${baseY}" stroke="rgba(226,232,240,0.4)" stroke-width="1" stroke-dasharray="3 3" opacity="0" />
+      <circle class="chart-dot-ring" cx="0" cy="0" r="7" fill="${strokeColor}" opacity="0" />
+      <circle class="chart-dot" cx="0" cy="0" r="3.6" fill="#ffffff" stroke="${strokeColor}" stroke-width="2" opacity="0" />
+    </svg>
+  `;
+
+  const svg = container.querySelector("svg");
+  const crosshair = svg.querySelector(".chart-crosshair");
+  const dotRing = svg.querySelector(".chart-dot-ring");
+  const dot = svg.querySelector(".chart-dot");
+
+  function handlePointer(event) {
+    const rect = svg.getBoundingClientRect();
+    if (!rect.width) return;
+
+    const relX = ((event.clientX - rect.left) / rect.width) * width;
+    const clamped = Math.max(padX, Math.min(width - padX, relX));
+    const ratio = (clamped - padX) / plotW;
+    const idx = Math.round(ratio * (coords.length - 1));
+    const pt = coords[idx];
+    if (!pt) return;
+
+    crosshair.setAttribute("x1", pt.x.toFixed(1));
+    crosshair.setAttribute("x2", pt.x.toFixed(1));
+    crosshair.setAttribute("opacity", "1");
+
+    dotRing.setAttribute("cx", pt.x.toFixed(1));
+    dotRing.setAttribute("cy", pt.y.toFixed(1));
+    dotRing.setAttribute("opacity", "0.28");
+
+    dot.setAttribute("cx", pt.x.toFixed(1));
+    dot.setAttribute("cy", pt.y.toFixed(1));
+    dot.setAttribute("opacity", "1");
+
+    if (onHover) onHover(pt.price, pt.ts);
+  }
+
+  function handleLeave() {
+    crosshair.setAttribute("opacity", "0");
+    dotRing.setAttribute("opacity", "0");
+    dot.setAttribute("opacity", "0");
+    if (onLeave) onLeave();
+  }
+
+  svg.addEventListener("pointermove", handlePointer);
+  svg.addEventListener("pointerdown", handlePointer);
+  svg.addEventListener("pointerleave", handleLeave);
+}
+
+function getFeaturedChartCoins() {
+  const picked = [];
+  const usedIds = new Set();
+
+  PREFERRED_CHART_IDS.forEach((id) => {
+    const found = state.coins.find((c) => c.id === id);
+    if (found) {
+      picked.push(found);
+      usedIds.add(found.id);
+    }
+  });
+
+  // Eksik kalırsa sabit coin dışındaki en büyük coinlerle 4'e tamamla
+  for (const coin of state.coins) {
+    if (picked.length >= 4) break;
+    if (!usedIds.has(coin.id) && !STABLECOIN_IDS.has(coin.id)) {
+      picked.push(coin);
+      usedIds.add(coin.id);
+    }
+  }
+
+  return picked;
+}
+
+function renderChartCardSkeletons() {
+  if (!elements.chartCardsGrid) return;
+  elements.chartCardsGrid.innerHTML = Array.from({ length: 4 })
+    .map(
+      () => `
+      <article class="chart-card chart-card-skeleton">
+        <div class="skeleton-bar" style="width: 55%"></div>
+        <div class="skeleton-bar" style="width: 42%; height: 22px"></div>
+        <div class="skeleton-bar" style="width: 100%; height: 88px"></div>
+        <div class="skeleton-bar" style="width: 75%"></div>
+      </article>
+    `
+    )
+    .join("");
+}
+
+function renderChartCards() {
+  if (!elements.chartCardsGrid) return;
+  const featured = getFeaturedChartCoins();
+
+  if (featured.length === 0) {
+    elements.chartCardsGrid.innerHTML = "";
+    return;
+  }
+
+  elements.chartCardsGrid.innerHTML = "";
+  const rangeText = state.chartRange === "24h" ? "24s" : "7g";
+
+  featured.forEach((coin) => {
+    const series = getChartSeries(coin, state.chartRange);
+    const badgeVal =
+      state.chartRange === "24h" && typeof getChange24h(coin) === "number"
+        ? getChange24h(coin)
+        : series?.changePct;
+
+    const card = document.createElement("article");
+    card.className = "chart-card";
+    card.innerHTML = `
+      <div class="chart-card-head" data-open-coin="${escapeHtml(coin.id)}" title="Detay ve hesaplayıcı için tıkla">
+        <div class="chart-card-coin">
+          <img src="${escapeHtml(safeImageUrl(coin.image))}" alt="${escapeHtml(coin.name)} logosu" loading="lazy" />
+          <div>
+            <div class="chart-card-name">${escapeHtml(coin.name)}</div>
+            <span class="chart-card-sym">${escapeHtml(coin.symbol)}</span>
+          </div>
+        </div>
+        ${renderChangeBadge(badgeVal)}
+      </div>
+
+      <div class="chart-card-price-block">
+        <strong class="chart-card-price">${formatPrice(coin.current_price, state.currency)}</strong>
+        <span class="chart-card-time">Canlı · ${rangeText}</span>
+      </div>
+
+      <div class="chart-svg-wrap"></div>
+
+      <div class="chart-card-foot">
+        <span>
+          Min <strong>${formatPrice(series?.min, state.currency)}</strong> ·
+          Max <strong>${formatPrice(series?.max, state.currency)}</strong>
+        </span>
+        <button class="chart-card-detail-btn" type="button" data-open-coin="${escapeHtml(coin.id)}">Detay →</button>
+      </div>
+    `;
+
+    const priceEl = card.querySelector(".chart-card-price");
+    const timeEl = card.querySelector(".chart-card-time");
+    const svgWrap = card.querySelector(".chart-svg-wrap");
+
+    mountInteractiveChart({
+      container: svgWrap,
+      series,
+      gradId: `chartGrad-${coin.id}`,
+      width: 320,
+      height: 108,
+      onHover: (price, ts) => {
+        priceEl.textContent = formatPrice(price, state.currency);
+        timeEl.textContent = formatChartDate(ts);
+        timeEl.classList.add("is-hovering");
+      },
+      onLeave: () => {
+        priceEl.textContent = formatPrice(coin.current_price, state.currency);
+        timeEl.textContent = `Canlı · ${rangeText}`;
+        timeEl.classList.remove("is-hovering");
+      },
+    });
+
+    card.querySelectorAll("[data-open-coin]").forEach((el) => {
+      el.addEventListener("click", () => {
+        elements.converterAmount.value = "1";
+        openCoinModal(coin);
+      });
+    });
+
+    elements.chartCardsGrid.appendChild(card);
+  });
+}
+
+function renderModalChart(coin) {
+  if (!coin || !elements.modalChartWrap) return;
+  const series = getChartSeries(coin, state.modalChartRange);
+  const defaultMeta =
+    state.modalChartRange === "24h"
+      ? "Son 24 Saat Saatlik Trend"
+      : "Son 7 Gün Saatlik Trend";
+
+  elements.modalChartMeta.textContent = defaultMeta;
+  elements.modalChartMeta.classList.remove("is-hovering");
+
+  mountInteractiveChart({
+    container: elements.modalChartWrap,
+    series,
+    gradId: "chartGrad-modal",
+    width: 460,
+    height: 132,
+    onHover: (price, ts) => {
+      elements.modalChartMeta.textContent = `${formatChartDate(ts)} · ${formatPrice(
+        price,
+        state.currency
+      )}`;
+      elements.modalChartMeta.classList.add("is-hovering");
+    },
+    onLeave: () => {
+      elements.modalChartMeta.textContent = defaultMeta;
+      elements.modalChartMeta.classList.remove("is-hovering");
+    },
+  });
+}
+
 /* ---------- Coin Detay Modalı & Hesaplayıcı ---------- */
 
 function setBadgeElement(el, value, label) {
@@ -589,6 +907,7 @@ function openCoinModal(coin) {
 
   elements.converterUnit.textContent = coin.symbol.toUpperCase();
   updateConverterResult();
+  renderModalChart(coin);
 
   elements.modal.classList.remove("hidden");
 }
@@ -631,6 +950,32 @@ elements.currencyButtons.forEach((btn) => {
       b.classList.toggle("active", b.dataset.currency === selected)
     );
     fetchCryptoData({ currencyChanged: true });
+  });
+});
+
+elements.rangeButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const selected = btn.dataset.range;
+    if (!selected || selected === state.chartRange) return;
+
+    state.chartRange = selected;
+    elements.rangeButtons.forEach((b) =>
+      b.classList.toggle("active", b.dataset.range === selected)
+    );
+    renderChartCards();
+  });
+});
+
+elements.modalRangeButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const selected = btn.dataset.range;
+    if (!selected || selected === state.modalChartRange) return;
+
+    state.modalChartRange = selected;
+    elements.modalRangeButtons.forEach((b) =>
+      b.classList.toggle("active", b.dataset.range === selected)
+    );
+    if (state.selectedCoin) renderModalChart(state.selectedCoin);
   });
 });
 

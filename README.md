@@ -7,7 +7,8 @@
 - **Canlı Otomatik Güncelleme:** 60 saniyelik geri sayım ile yeni verileri otomatik çeker; fiyatı artan veya düşen coinleri anlık yeşil/kırmızı vurgular (istenirse duraklatılabilir).
 - **1 Saatlik ve 24 Saatlik Değişimler:** Piyasa değerine göre ilk 25 kripto paranın anlık fiyatı, 1s ve 24s değişim oranı, işlem hacmi ve piyasa değeri.
 - **Para Birimi Seçimi:** Tek tıkla **USD ($)**, **TRY (₺)** ve **EUR (€)** arasında geçiş.
-- **7 Günlük Mini Trend Grafiği:** Her coin için harici kütüphane kullanmadan çizilen saf SVG grafik.
+- **Etkileşimli Grafik Kartları (24s / 7g):** Bitcoin, Ethereum, Solana ve BNB için üzerine gelince saatlik fiyat ve tarih gösteren saf SVG grafik kartları (ayrıca her coinin detay penceresinde büyük etkileşimli grafik).
+- **7 Günlük Mini Trend Grafiği:** Tablodaki her coin için harici kütüphane kullanmadan çizilen saf SVG grafik.
 - **Arama, Sıralama ve Favoriler:** İsim/sembole göre anlık arama, çoklu sıralama ve `localStorage` ile kalıcı favori listesi.
 - **Detay Penceresi & Hızlı Hesaplayıcı:** Herhangi bir coine tıklayarak 24s en yüksek/düşük, ATH ve anlık tutar dönüştürücüye erişim.
 - **Site İçi Proje Açıklaması:** Uygulamanın ne yaptığını, API akışını ve kullanılan endpoint'i doğrudan sayfa üzerinde özetleyen dokümantasyon bölümü.
