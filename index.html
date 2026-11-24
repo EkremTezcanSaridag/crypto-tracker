@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crypto Tracker — Canlı Kripto Para Takip Paneli</title>
+  <meta name="description" content="CoinGecko Public API kullanılarak geliştirilmiş canlı kripto para takip web uygulaması." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Üst Başlık -->
+    <header class="header">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">₿</div>
+        <div>
+          <h1>Crypto Tracker</h1>
+          <p class="subtitle">CoinGecko Ücretsiz API ile Canlı Piyasa Verileri</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="currency-group" role="group" aria-label="Para birimi seçimi">
+          <button class="currency-btn active" data-currency="usd" type="button">USD ($)</button>
+          <button class="currency-btn" data-currency="try" type="button">TRY (₺)</button>
+          <button class="currency-btn" data-currency="eur" type="button">EUR (€)</button>
+        </div>
+
+        <button id="refreshBtn" class="refresh-btn" type="button" title="Verileri şimdi güncelle">
+          <span class="refresh-icon" aria-hidden="true">↻</span>
+          <span>Yenile</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Durum / Uyarı Bandı -->
+    <div id="statusBanner" class="status-banner hidden" role="status" aria-live="polite"></div>
+
+    <!-- Özet İstatistik Kartları -->
+    <section class="stats-grid" aria-label="Piyasa özeti">
+      <article class="stat-card">
+        <span class="stat-label">İlk 25 Toplam Piyasa Değeri</span>
+        <strong id="totalMarketCap" class="stat-value">—</strong>
+        <span id="marketCapSub" class="stat-sub">Veri yükleniyor...</span>
+      </article>
+
+      <article class="stat-card">
+        <span class="stat-label">24s En Çok Yükselen</span>
+        <strong id="topGainer" class="stat-value positive">—</strong>
+        <span id="topGainerSub" class="stat-sub">—</span>
+      </article>
+
+      <article class="stat-card">
+        <span class="stat-label">24s En Çok Düşen</span>
+        <strong id="topLoser" class="stat-value negative">—</strong>
+        <span id="topLoserSub" class="stat-sub">—</span>
+      </article>
+
+      <article class="stat-card">
+        <span class="stat-label">Son Güncelleme</span>
+        <strong id="lastUpdated" class="stat-value">—</strong>
+        <span id="dataSourceLabel" class="stat-sub">CoinGecko Public API v3</span>
+      </article>
+    </section>
+
+    <!-- Arama ve Filtreleme Çubuğu -->
+    <section class="toolbar" aria-label="Arama ve filtreler">
+      <div class="search-box">
+        <span class="search-icon" aria-hidden="true">🔍</span>
+        <input
+          id="searchInput"
+          type="search"
+          placeholder="Coin adı veya sembolü ara (ör. Bitcoin, ETH, SOL)..."
+          autocomplete="off"
+          aria-label="Coin ara"
+        />
+      </div>
+
+      <div class="toolbar-controls">
+        <button id="favoritesFilterBtn" class="filter-pill" type="button" aria-pressed="false">
+          <span>★</span> Favorilerim (<span id="favCount">0</span>)
+        </button>
+
+        <select id="sortSelect" class="sort-select" aria-label="Sıralama ölçütü">
+          <option value="rank">Sırala: Piyasa Değeri</option>
+          <option value="price_desc">Fiyat (Yüksek → Düşük)</option>
+          <option value="price_asc">Fiyat (Düşük → Yüksek)</option>
+          <option value="change_desc">24s Değişim (En Çok Artan)</option>
+          <option value="change_asc">24s Değişim (En Çok Düşen)</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- Kripto Tablosu -->
+    <main class="table-card">
+      <div class="table-wrapper">
+        <table class="crypto-table">
+          <thead>
+            <tr>
+              <th class="col-fav" aria-label="Favori">★</th>
+              <th class="col-rank">#</th>
+              <th class="col-coin">Coin</th>
+              <th class="num">Fiyat</th>
+              <th class="num">24s Değişim</th>
+              <th class="num hide-sm">24s Aralık</th>
+              <th class="num hide-md">Piyasa Değeri</th>
+              <th class="num hide-lg">24s Hacim</th>
+              <th class="col-chart hide-sm">Son 7 Gün</th>
+            </tr>
+          </thead>
+          <tbody id="cryptoTableBody">
+            <!-- JavaScript ile dinamik olarak doldurulur -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Boş / Hata Durumu -->
+      <div id="emptyState" class="empty-state hidden">
+        <p id="emptyStateMessage">Aramanızla eşleşen coin bulunamadı.</p>
+        <button id="retryBtn" class="retry-btn hidden" type="button">Tekrar Dene</button>
+      </div>
+    </main>
+
+    <!-- Alt Bilgi (CoinGecko Atıfı) -->
+    <footer class="footer">
+      <p>
+        Veriler ücretsiz
+        <a href="https://www.coingecko.com/en/api" target="_blank" rel="noopener noreferrer">CoinGecko Public API v3</a>
+        tarafından sağlanmaktadır. Yatırım tavsiyesi değildir.
+      </p>
+      <p>
+        <a href="https://github.com/EkremTezcanSaridag/crypto-tracker" target="_blank" rel="noopener noreferrer">
+          GitHub Reposu
+        </a>
+      </p>
+    </footer>
+  </div>
+
+  <!-- Coin Detay & Hızlı Dönüştürücü Modalı -->
+  <div id="coinModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-coin-info">
+          <img id="modalLogo" src="" alt="" class="modal-logo" />
+          <div>
+            <h2 id="modalTitle">—</h2>
+            <span id="modalSymbol" class="coin-symbol">—</span>
+          </div>
+        </div>
+        <button id="closeModalBtn" class="close-btn" type="button" aria-label="Pencereyi kapat">✕</button>
+      </div>
+
+      <div class="modal-price-row">
+        <span id="modalPrice" class="modal-price">—</span>
+        <span id="modalChange" class="change-badge">—</span>
+      </div>
+
+      <div class="modal-metrics">
+        <div class="metric-item">
+          <span>24s En Yüksek</span>
+          <strong id="modalHigh24h">—</strong>
+        </div>
+        <div class="metric-item">
+          <span>24s En Düşük</span>
+          <strong id="modalLow24h">—</strong>
+        </div>
+        <div class="metric-item">
+          <span>Piyasa Değeri</span>
+          <strong id="modalMarketCap">—</strong>
+        </div>
+        <div class="metric-item">
+          <span>24s İşlem Hacmi</span>
+          <strong id="modalVolume">—</strong>
+        </div>
+        <div class="metric-item">
+          <span>Tüm Zamanların Zirvesi (ATH)</span>
+          <strong id="modalAth">—</strong>
+        </div>
+        <div class="metric-item">
+          <span>Dolaşımdaki Arz</span>
+          <strong id="modalSupply">—</strong>
+        </div>
+      </div>
+
+      <!-- Hızlı Hesaplayıcı -->
+      <div class="converter-box">
+        <label for="converterAmount" class="converter-label">Hızlı Değer Hesaplayıcı</label>
+        <div class="converter-row">
+          <div class="converter-input-wrap">
+            <input id="converterAmount" type="number" min="0" step="any" value="1" />
+            <span id="converterUnit" class="converter-unit">BTC</span>
+          </div>
+          <span class="converter-eq" aria-hidden="true">=</span>
+          <div id="converterResult" class="converter-result">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
