@@ -29,6 +29,10 @@
   --shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 *,
 *::before,
 *::after {
@@ -66,7 +70,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .brand {
@@ -105,6 +109,75 @@ body {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+}
+
+.nav-link-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 13px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.86rem;
+  font-weight: 600;
+  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.nav-link-btn:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: var(--bg-card);
+}
+
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 13px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+.live-pill.active {
+  border-color: rgba(34, 197, 94, 0.38);
+  background: rgba(34, 197, 94, 0.1);
+  color: #bbf7d0;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.live-pill.active .live-dot {
+  background: var(--green);
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  animation: pulse-dot 1.8s infinite;
+}
+
+@keyframes pulse-dot {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.65);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(34, 197, 94, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
 }
 
 .currency-group {
@@ -173,6 +246,66 @@ body {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* ---------- Kısa Tanıtım Şeridi ---------- */
+.intro-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(21, 30, 49, 0.92));
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.intro-text {
+  flex: 1 1 520px;
+}
+
+.intro-tag {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.18);
+  padding: 3px 9px;
+  border-radius: 999px;
+  margin-bottom: 7px;
+}
+
+.intro-text p {
+  font-size: 0.92rem;
+  color: #cbd5e1;
+}
+
+.intro-text strong {
+  color: #ffffff;
+}
+
+.intro-more-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(59, 130, 246, 0.18);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #bfdbfe;
+  text-decoration: none;
+  font-size: 0.86rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.intro-more-link:hover {
+  background: var(--accent);
+  color: #ffffff;
 }
 
 /* ---------- Durum / Uyarı Bandı ---------- */
@@ -473,6 +606,37 @@ body {
   font-weight: 600;
 }
 
+/* Canlı güncellemede fiyat değişim vurgusu */
+.price-cell.flash-up {
+  animation: flash-green 1.6s ease;
+}
+
+.price-cell.flash-down {
+  animation: flash-red 1.6s ease;
+}
+
+@keyframes flash-green {
+  0% {
+    color: #4ade80;
+    background: rgba(34, 197, 94, 0.24);
+  }
+  100% {
+    color: var(--text);
+    background: transparent;
+  }
+}
+
+@keyframes flash-red {
+  0% {
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.24);
+  }
+  100% {
+    color: var(--text);
+    background: transparent;
+  }
+}
+
 .change-badge {
   display: inline-flex;
   align-items: center;
@@ -551,6 +715,202 @@ body {
 
 .retry-btn:hover {
   background: var(--accent-hover);
+}
+
+/* ---------- Proje Hakkında Bölümü ---------- */
+.about-section {
+  margin-top: 38px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 30px 26px;
+  box-shadow: var(--shadow);
+}
+
+.about-header {
+  max-width: 760px;
+  margin-bottom: 24px;
+}
+
+.about-eyebrow {
+  display: inline-block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #60a5fa;
+  margin-bottom: 6px;
+}
+
+.about-header h2 {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.about-lead {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.about-lead strong {
+  color: var(--text);
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.step-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.step-num {
+  display: inline-block;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #93c5fd;
+  background: var(--accent-soft);
+  padding: 3px 9px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+
+.step-card h3 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.step-card p {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.step-card code {
+  background: rgba(148, 163, 184, 0.14);
+  color: #e2e8f0;
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-size: 0.82rem;
+}
+
+.about-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.about-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.about-box h3 {
+  font-size: 1.02rem;
+  margin-bottom: 14px;
+}
+
+.feature-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feature-list li {
+  position: relative;
+  padding-left: 18px;
+  font-size: 0.89rem;
+  color: var(--text-muted);
+}
+
+.feature-list li::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: #60a5fa;
+  font-weight: 700;
+}
+
+.feature-list strong {
+  color: var(--text);
+}
+
+.tech-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tech-tag {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid var(--border);
+  color: #e2e8f0;
+}
+
+.api-info-box {
+  background: rgba(11, 15, 25, 0.55);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.api-info-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 0.84rem;
+}
+
+.api-info-row span {
+  color: var(--text-muted);
+}
+
+.endpoint-block {
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.endpoint-method {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--green);
+  background: var(--green-soft);
+  padding: 2px 7px;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+
+.endpoint-block code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  word-break: break-all;
 }
 
 /* ---------- Alt Bilgi ---------- */
@@ -641,8 +1001,9 @@ body {
 
 .modal-price-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 20px;
 }
 
@@ -747,6 +1108,12 @@ body {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .steps-grid {
+    grid-template-columns: 1fr;
+  }
+  .about-details-grid {
+    grid-template-columns: 1fr;
+  }
   .hide-lg {
     display: none;
   }
@@ -765,10 +1132,19 @@ body {
   .stats-grid {
     grid-template-columns: 1fr;
   }
+  .about-section {
+    padding: 22px 16px;
+  }
   .hide-sm {
     display: none;
   }
   .modal-metrics {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 440px) {
+  .hide-xs {
+    display: none;
   }
 }

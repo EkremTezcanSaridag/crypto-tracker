@@ -4,13 +4,13 @@
 
 ## Özellikler
 
-- **Canlı Piyasa Verileri:** Piyasa değerine göre ilk 25 kripto paranın anlık fiyatı, 24 saatlik değişim oranı, işlem hacmi ve piyasa değeri.
+- **Canlı Otomatik Güncelleme:** 60 saniyelik geri sayım ile yeni verileri otomatik çeker; fiyatı artan veya düşen coinleri anlık yeşil/kırmızı vurgular (istenirse duraklatılabilir).
+- **1 Saatlik ve 24 Saatlik Değişimler:** Piyasa değerine göre ilk 25 kripto paranın anlık fiyatı, 1s ve 24s değişim oranı, işlem hacmi ve piyasa değeri.
 - **Para Birimi Seçimi:** Tek tıkla **USD ($)**, **TRY (₺)** ve **EUR (€)** arasında geçiş.
 - **7 Günlük Mini Trend Grafiği:** Her coin için harici kütüphane kullanmadan çizilen saf SVG grafik.
-- **Arama ve Sıralama:** İsim/sembole göre anlık arama; piyasa değeri, fiyat veya 24 saatlik değişime göre sıralama.
-- **Favoriler (`localStorage`):** Seçilen coinleri yıldızlayıp tarayıcıda kalıcı olarak saklama.
+- **Arama, Sıralama ve Favoriler:** İsim/sembole göre anlık arama, çoklu sıralama ve `localStorage` ile kalıcı favori listesi.
 - **Detay Penceresi & Hızlı Hesaplayıcı:** Herhangi bir coine tıklayarak 24s en yüksek/düşük, ATH ve anlık tutar dönüştürücüye erişim.
-- **Akıllı Önbellek:** 60 saniyelik `localStorage` önbelleği sayesinde ücretsiz API limitine takılmadan akıcı kullanım.
+- **Site İçi Proje Açıklaması:** Uygulamanın ne yaptığını, API akışını ve kullanılan endpoint'i doğrudan sayfa üzerinde özetleyen dokümantasyon bölümü.
 
 ## Kullanılan API
 
@@ -18,16 +18,16 @@
 - **Ücret / Anahtar Durumu:** Tamamen **ücretsizdir**, kayıt veya API anahtarı (API key) gerektirmez ve tarayıcıdan doğrudan CORS destekli çalışır.
 - **Kullanılan Endpoint:**
   ```text
-  GET https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=25&page=1&sparkline=true&price_change_percentage=24h
+  GET https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=25&page=1&sparkline=true&price_change_percentage=1h,24h
   ```
 
 ## Proje Yapısı
 
 ```text
 crypto-tracker/
-├── index.html   # Uygulama iskeleti ve detay modalı
-├── style.css    # Responsive karanlık tema tasarımı
-├── app.js       # Fetch API istekleri, önbellek, filtreleme ve SVG grafik
+├── index.html   # Uygulama iskeleti, detay modalı ve "Proje Hakkında" bölümü
+├── style.css    # Responsive karanlık tema ve canlı fiyat vurgu animasyonları
+├── app.js       # Fetch API istekleri, otomatik 60sn yenileme, önbellek ve SVG grafik
 └── README.md    # Proje dokümantasyonu
 ```
 

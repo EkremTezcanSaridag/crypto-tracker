@@ -4,23 +4,30 @@
 
 const API_BASE_URL = "https://api.coingecko.com/api/v3/coins/markets";
 const COIN_COUNT = 25;
-const CACHE_TTL_MS = 60 * 1000; // 60 saniye önbellek (ücretsiz API limitini korumak için)
+const AUTO_REFRESH_SECONDS = 60; // Ücretsiz API güncelleme ve limit döngüsüyle uyumlu
+const CACHE_TTL_MS = 55 * 1000;  // 55 saniye önbellek
 const FAVORITES_STORAGE_KEY = "crypto_tracker_favorites";
 
 // Uygulama durumu (State)
 const state = {
   currency: "usd",
   coins: [],
+  previousPrices: {},   // Aynı para birimindeki bir önceki fiyatlar (anlık değişim vurgusu için)
+  priceFlashMap: {},    // { [coinId]: "flash-up" | "flash-down" }
   searchQuery: "",
   sortBy: "rank",
   onlyFavorites: false,
   favorites: loadFavorites(),
   selectedCoin: null,
   isLoading: false,
+  autoRefreshEnabled: true,
+  countdown: AUTO_REFRESH_SECONDS,
 };
 
 // DOM Referansları
 const elements = {
+  autoRefreshToggle: document.getElementById("autoRefreshToggle"),
+  autoRefreshLabel: document.getElementById("autoRefreshLabel"),
   currencyButtons: document.querySelectorAll(".currency-btn"),
   refreshBtn: document.getElementById("refreshBtn"),
   statusBanner: document.getElementById("statusBanner"),
@@ -47,6 +54,7 @@ const elements = {
   modalSymbol: document.getElementById("modalSymbol"),
   modalPrice: document.getElementById("modalPrice"),
   modalChange: document.getElementById("modalChange"),
+  modalChange1h: document.getElementById("modalChange1h"),
   modalHigh24h: document.getElementById("modalHigh24h"),
   modalLow24h: document.getElementById("modalLow24h"),
   modalMarketCap: document.getElementById("modalMarketCap"),
@@ -71,6 +79,14 @@ function escapeHtml(value) {
 
 function safeImageUrl(url) {
   return typeof url === "string" && url.startsWith("https://") ? url : "";
+}
+
+function getChange1h(coin) {
+  return coin.price_change_percentage_1h_in_currency;
+}
+
+function getChange24h(coin) {
+  return coin.price_change_percentage_24h_in_currency ?? coin.price_change_percentage_24h;
 }
 
 function formatPrice(value, currency) {
@@ -105,9 +121,17 @@ function formatNumber(value) {
 }
 
 function formatPercent(value) {
-  if (typeof value !== "number" || Number.isNaN(value)) return "0,00%";
+  if (typeof value !== "number" || Number.isNaN(value)) return "—";
   const sign = value > 0 ? "+" : "";
   return `${sign}${value.toFixed(2).replace(".", ",")}%`;
+}
+
+function renderChangeBadge(value, suffix = "") {
+  const isNum = typeof value === "number" && !Number.isNaN(value);
+  const badgeClass = !isNum ? "flat" : value > 0 ? "up" : value < 0 ? "down" : "flat";
+  const arrow = !isNum ? "" : value > 0 ? "▲" : value < 0 ? "▼" : "";
+  const text = `${arrow} ${formatPercent(value)}${suffix}`.trim();
+  return `<span class="change-badge ${badgeClass}">${text}</span>`;
 }
 
 function formatTime(timestamp) {
@@ -139,7 +163,7 @@ function saveFavorites() {
 }
 
 function getCacheKey(currency) {
-  return `crypto_tracker_cache_${currency}`;
+  return `crypto_tracker_v2_cache_${currency}`;
 }
 
 function readCache(currency) {
@@ -184,8 +208,8 @@ function renderSkeletonRows() {
         <td><div class="skeleton-bar"></div></td>
         <td><div class="skeleton-bar" style="width: 150px"></div></td>
         <td><div class="skeleton-bar"></div></td>
+        <td class="hide-xs"><div class="skeleton-bar"></div></td>
         <td><div class="skeleton-bar"></div></td>
-        <td class="hide-sm"><div class="skeleton-bar"></div></td>
         <td class="hide-md"><div class="skeleton-bar"></div></td>
         <td class="hide-lg"><div class="skeleton-bar"></div></td>
         <td class="hide-sm"><div class="skeleton-bar"></div></td>
@@ -195,9 +219,63 @@ function renderSkeletonRows() {
     .join("");
 }
 
+/* ---------- Otomatik Canlı Güncelleme Zamanlayıcısı ---------- */
+
+function updateAutoRefreshUI() {
+  elements.autoRefreshToggle.classList.toggle("active", state.autoRefreshEnabled);
+  elements.autoRefreshToggle.setAttribute("aria-pressed", String(state.autoRefreshEnabled));
+  elements.autoRefreshLabel.textContent = state.autoRefreshEnabled
+    ? `Canlı · ${state.countdown}sn`
+    : "Otomatik: Kapalı";
+}
+
+function startAutoRefreshTimer() {
+  setInterval(() => {
+    // Sekme arka plandaysa veya otomatik güncelleme kapalıysa sayacı beklet
+    if (!state.autoRefreshEnabled || document.visibilityState === "hidden" || state.isLoading) {
+      return;
+    }
+
+    state.countdown -= 1;
+    if (state.countdown <= 0) {
+      state.countdown = AUTO_REFRESH_SECONDS;
+      updateAutoRefreshUI();
+      fetchCryptoData({ forceRefresh: true, isAuto: true });
+    } else {
+      updateAutoRefreshUI();
+    }
+  }, 1000);
+}
+
+/* ---------- Fiyat Değişim Karşılaştırması (Anlık Vurgu) ---------- */
+
+function computePriceFlashes(newCoins, currencyChanged) {
+  const flashes = {};
+
+  if (!currencyChanged) {
+    newCoins.forEach((coin) => {
+      const prev = state.previousPrices[coin.id];
+      if (typeof prev === "number" && typeof coin.current_price === "number") {
+        if (coin.current_price > prev) flashes[coin.id] = "flash-up";
+        else if (coin.current_price < prev) flashes[coin.id] = "flash-down";
+      }
+    });
+  }
+
+  // Sonraki güncelleme için güncel fiyatları kaydet
+  const nextPrices = {};
+  newCoins.forEach((coin) => {
+    if (typeof coin.current_price === "number") {
+      nextPrices[coin.id] = coin.current_price;
+    }
+  });
+  state.previousPrices = nextPrices;
+  state.priceFlashMap = flashes;
+}
+
 /* ---------- CoinGecko API İsteği ---------- */
 
-async function fetchCryptoData({ forceRefresh = false } = {}) {
+async function fetchCryptoData({ forceRefresh = false, currencyChanged = false, isAuto = false } = {}) {
   if (state.isLoading) return;
 
   const currency = state.currency;
@@ -205,9 +283,12 @@ async function fetchCryptoData({ forceRefresh = false } = {}) {
   const isFreshCache =
     cached && Array.isArray(cached.data) && Date.now() - cached.timestamp < CACHE_TTL_MS;
 
-  // Önbellek tazeyse ve kullanıcı zorla yenilemeye basmadıysa API limitini koru
+  // Önbellek tazeyse ve zorla yenileme istenmediyse API limitini koru
   if (isFreshCache && !forceRefresh) {
+    computePriceFlashes(cached.data, true);
     state.coins = cached.data;
+    state.countdown = AUTO_REFRESH_SECONDS;
+    updateAutoRefreshUI();
     hideBanner();
     updateUI(cached.timestamp, "Önbellekten yüklendi (60sn)");
     return;
@@ -221,7 +302,7 @@ async function fetchCryptoData({ forceRefresh = false } = {}) {
   const url =
     `${API_BASE_URL}?vs_currency=${encodeURIComponent(currency)}` +
     `&order=market_cap_desc&per_page=${COIN_COUNT}&page=1` +
-    `&sparkline=true&price_change_percentage=24h`;
+    `&sparkline=true&price_change_percentage=1h,24h`;
 
   try {
     const response = await fetch(url);
@@ -238,17 +319,22 @@ async function fetchCryptoData({ forceRefresh = false } = {}) {
       throw new Error("INVALID_DATA");
     }
 
+    computePriceFlashes(data, currencyChanged);
     state.coins = data;
     writeCache(currency, data);
     hideBanner();
-    updateUI(Date.now(), "CoinGecko Public API v3");
+    updateUI(
+      Date.now(),
+      isAuto ? "Canlı otomatik güncellendi" : "CoinGecko Public API v3"
+    );
   } catch (error) {
     // Hata durumunda elde eski önbellek varsa kullanıcıyı boş bırakma
     if (cached && Array.isArray(cached.data)) {
       state.coins = cached.data;
+      state.priceFlashMap = {};
       const reason =
         error.message === "RATE_LIMIT"
-          ? "CoinGecko ücretsiz kullanım limitine (429) ulaşıldı. Son kaydedilen veriler gösteriliyor; 1 dakika sonra tekrar yenileyebilirsiniz."
+          ? "CoinGecko ücretsiz kullanım limitine (429) ulaşıldı. Son kaydedilen veriler gösteriliyor; 1 dakika sonra otomatik güncellenecek."
           : "Canlı bağlantıda geçici sorun oluştu. Son kaydedilen veriler gösteriliyor.";
       showBanner(reason, "warning");
       updateUI(cached.timestamp, "Kayıtlı veri (çevrimdışı yedek)");
@@ -266,6 +352,8 @@ async function fetchCryptoData({ forceRefresh = false } = {}) {
     }
   } finally {
     state.isLoading = false;
+    state.countdown = AUTO_REFRESH_SECONDS;
+    updateAutoRefreshUI();
     elements.refreshBtn.disabled = false;
     elements.refreshBtn.classList.remove("loading");
   }
@@ -329,7 +417,7 @@ function updateUI(updatedTimestamp, sourceText) {
   renderSummaryCards();
   renderTable();
 
-  // Modal açıksa para birimi değişiminde içeriğini de tazele
+  // Modal açıksa güncellemede içeriğini de tazele
   if (state.selectedCoin) {
     const updatedCoin = state.coins.find((c) => c.id === state.selectedCoin.id);
     if (updatedCoin) openCoinModal(updatedCoin);
@@ -343,20 +431,14 @@ function renderSummaryCards() {
   elements.totalMarketCap.textContent = formatCompactCurrency(totalCap, state.currency);
   elements.marketCapSub.textContent = `Listelenen ${state.coins.length} kripto para`;
 
-  const withChange = state.coins.filter(
-    (c) => typeof c.price_change_percentage_24h === "number"
-  );
+  const withChange = state.coins.filter((c) => typeof getChange24h(c) === "number");
 
   if (withChange.length > 0) {
-    const best = [...withChange].sort(
-      (a, b) => b.price_change_percentage_24h - a.price_change_percentage_24h
-    )[0];
-    const worst = [...withChange].sort(
-      (a, b) => a.price_change_percentage_24h - b.price_change_percentage_24h
-    )[0];
+    const best = [...withChange].sort((a, b) => getChange24h(b) - getChange24h(a))[0];
+    const worst = [...withChange].sort((a, b) => getChange24h(a) - getChange24h(b))[0];
 
     elements.topGainer.textContent = `${best.symbol.toUpperCase()} ${formatPercent(
-      best.price_change_percentage_24h
+      getChange24h(best)
     )}`;
     elements.topGainerSub.textContent = `${best.name} • ${formatPrice(
       best.current_price,
@@ -364,7 +446,7 @@ function renderSummaryCards() {
     )}`;
 
     elements.topLoser.textContent = `${worst.symbol.toUpperCase()} ${formatPercent(
-      worst.price_change_percentage_24h
+      getChange24h(worst)
     )}`;
     elements.topLoserSub.textContent = `${worst.name} • ${formatPrice(
       worst.current_price,
@@ -393,18 +475,19 @@ function getFilteredAndSortedCoins() {
     case "price_asc":
       sorted.sort((a, b) => (a.current_price || 0) - (b.current_price || 0));
       break;
+    case "change_1h_desc":
+      sorted.sort(
+        (a, b) => (getChange1h(b) ?? -Infinity) - (getChange1h(a) ?? -Infinity)
+      );
+      break;
     case "change_desc":
       sorted.sort(
-        (a, b) =>
-          (b.price_change_percentage_24h ?? -Infinity) -
-          (a.price_change_percentage_24h ?? -Infinity)
+        (a, b) => (getChange24h(b) ?? -Infinity) - (getChange24h(a) ?? -Infinity)
       );
       break;
     case "change_asc":
       sorted.sort(
-        (a, b) =>
-          (a.price_change_percentage_24h ?? Infinity) -
-          (b.price_change_percentage_24h ?? Infinity)
+        (a, b) => (getChange24h(a) ?? Infinity) - (getChange24h(b) ?? Infinity)
       );
       break;
     default:
@@ -431,12 +514,9 @@ function renderTable() {
 
   elements.tableBody.innerHTML = coins
     .map((coin) => {
-      const change = coin.price_change_percentage_24h;
-      const badgeClass =
-        typeof change !== "number" ? "flat" : change > 0 ? "up" : change < 0 ? "down" : "flat";
-      const arrow = typeof change !== "number" ? "" : change > 0 ? "▲" : change < 0 ? "▼" : "";
       const isFav = state.favorites.has(coin.id);
       const sparkPrices = coin.sparkline_in_7d?.price || [];
+      const flashClass = state.priceFlashMap[coin.id] || "";
 
       return `
         <tr data-coin-id="${escapeHtml(coin.id)}">
@@ -464,17 +544,9 @@ function renderTable() {
               </div>
             </div>
           </td>
-          <td class="num price-cell">${formatPrice(coin.current_price, state.currency)}</td>
-          <td class="num">
-            <span class="change-badge ${badgeClass}">
-              ${arrow} ${formatPercent(change)}
-            </span>
-          </td>
-          <td class="num hide-sm">
-            <span class="range-text">
-              ${formatPrice(coin.low_24h, state.currency)} – ${formatPrice(coin.high_24h, state.currency)}
-            </span>
-          </td>
+          <td class="num price-cell ${flashClass}">${formatPrice(coin.current_price, state.currency)}</td>
+          <td class="num hide-xs">${renderChangeBadge(getChange1h(coin))}</td>
+          <td class="num">${renderChangeBadge(getChange24h(coin))}</td>
           <td class="num hide-md">${formatCompactCurrency(coin.market_cap, state.currency)}</td>
           <td class="num hide-lg">${formatCompactCurrency(coin.total_volume, state.currency)}</td>
           <td class="col-chart hide-sm">${createSparklineSvg(sparkPrices)}</td>
@@ -486,6 +558,14 @@ function renderTable() {
 
 /* ---------- Coin Detay Modalı & Hesaplayıcı ---------- */
 
+function setBadgeElement(el, value, label) {
+  const isNum = typeof value === "number" && !Number.isNaN(value);
+  const badgeClass = !isNum ? "flat" : value > 0 ? "up" : value < 0 ? "down" : "flat";
+  const arrow = !isNum ? "" : value > 0 ? "▲" : value < 0 ? "▼" : "";
+  el.className = `change-badge ${badgeClass}`;
+  el.textContent = `${arrow} ${formatPercent(value)} (${label})`.trim();
+}
+
 function openCoinModal(coin) {
   state.selectedCoin = coin;
 
@@ -495,12 +575,8 @@ function openCoinModal(coin) {
   elements.modalSymbol.textContent = coin.symbol.toUpperCase();
   elements.modalPrice.textContent = formatPrice(coin.current_price, state.currency);
 
-  const change = coin.price_change_percentage_24h;
-  const badgeClass =
-    typeof change !== "number" ? "flat" : change > 0 ? "up" : change < 0 ? "down" : "flat";
-  const arrow = typeof change !== "number" ? "" : change > 0 ? "▲" : change < 0 ? "▼" : "";
-  elements.modalChange.className = `change-badge ${badgeClass}`;
-  elements.modalChange.textContent = `${arrow} ${formatPercent(change)} (24s)`.trim();
+  setBadgeElement(elements.modalChange, getChange24h(coin), "24s");
+  setBadgeElement(elements.modalChange1h, getChange1h(coin), "1s");
 
   elements.modalHigh24h.textContent = formatPrice(coin.high_24h, state.currency);
   elements.modalLow24h.textContent = formatPrice(coin.low_24h, state.currency);
@@ -533,16 +609,26 @@ function updateConverterResult() {
 
 /* ---------- Olay Dinleyicileri (Event Listeners) ---------- */
 
+elements.autoRefreshToggle.addEventListener("click", () => {
+  state.autoRefreshEnabled = !state.autoRefreshEnabled;
+  if (state.autoRefreshEnabled) {
+    state.countdown = AUTO_REFRESH_SECONDS;
+  }
+  updateAutoRefreshUI();
+});
+
 elements.currencyButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
     const selected = btn.dataset.currency;
     if (!selected || selected === state.currency) return;
 
     state.currency = selected;
+    state.previousPrices = {};
+    state.priceFlashMap = {};
     elements.currencyButtons.forEach((b) =>
       b.classList.toggle("active", b.dataset.currency === selected)
     );
-    fetchCryptoData();
+    fetchCryptoData({ currencyChanged: true });
   });
 });
 
@@ -556,16 +642,19 @@ elements.retryBtn.addEventListener("click", () => {
 
 elements.searchInput.addEventListener("input", (event) => {
   state.searchQuery = event.target.value;
+  state.priceFlashMap = {};
   renderTable();
 });
 
 elements.sortSelect.addEventListener("change", (event) => {
   state.sortBy = event.target.value;
+  state.priceFlashMap = {};
   renderTable();
 });
 
 elements.favoritesFilterBtn.addEventListener("click", () => {
   state.onlyFavorites = !state.onlyFavorites;
+  state.priceFlashMap = {};
   elements.favoritesFilterBtn.classList.toggle("active", state.onlyFavorites);
   elements.favoritesFilterBtn.setAttribute("aria-pressed", String(state.onlyFavorites));
   renderTable();
@@ -582,6 +671,7 @@ elements.tableBody.addEventListener("click", (event) => {
 
     saveFavorites();
     elements.favCount.textContent = String(state.favorites.size);
+    state.priceFlashMap = {};
     renderTable();
     return;
   }
@@ -609,5 +699,7 @@ document.addEventListener("keydown", (event) => {
 
 elements.converterAmount.addEventListener("input", updateConverterResult);
 
-// İlk açılışta verileri çek
+// İlk açılışta verileri çek ve otomatik canlı zamanlayıcıyı başlat
+updateAutoRefreshUI();
 fetchCryptoData();
+startAutoRefreshTimer();
